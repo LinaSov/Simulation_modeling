@@ -1,53 +1,56 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <string>
 #include <random>
 #include <cmath>
-#include <locale>
-#include <clocale>
+
+void writeHistogramToCSV(const std::string& filename, const std::vector<int>& histogram) {
+    std::ofstream csv_file(filename);
+    if (!csv_file.is_open()) {
+        std::cerr << "РћС€РёР±РєР° РѕС‚РєСЂС‹С‚РёСЏ С„Р°Р№Р»Р°: " << filename << std::endl;
+        return;
+    }
+
+    for (size_t i = 0; i < histogram.size(); i++) {
+        csv_file  << histogram[i] << "\n";
+    }
+
+    csv_file.close();
+    std::cout << "Р“РёСЃС‚РѕРіСЂР°РјРјР° СЃРѕС…СЂР°РЅРµРЅР° РІ С„Р°Р№Р»Рµ '" << filename << "'." << std::endl;
+}
+
+void printChiSquareResult(double chi_square) {
+    std::cout << "РўРµСЃС‚РёСЂРѕРІР°РЅРёРµ РјРµС‚РѕРґРѕРј 'РҐРё-РєРІР°РґСЂР°С‚':" << std::endl;
+    std::cout << "РҐРё-РєРІР°РґСЂР°С‚: " << chi_square << std::endl;
+}
 
 int main() {
     setlocale(LC_ALL, "Russian");
 
-    const unsigned long long seed = 12345; // Начальное значение (зерно) для генератора
-    std::mt19937 mt(seed);
+    std::random_device rd;
+    std::mt19937 mt(rd());
+    std::uniform_int_distribution<int> dist(0, 9); 
 
-    const int numSamples = 10000; // Количество сгенерированных случайных чисел
-    const int numBins = 20; // Количество корзин
+    const int num_samples = 10000;
+    const int num_bins = 10;
+    std::vector<int> histogram(num_bins, 0);
 
-    std::vector<int> histogram(numBins, 0);
-
-    std::uniform_int_distribution<int> dist(0, numBins - 1);
-
-    // Генерация случайных чисел и заполнение гистограммы
-    for (int i = 0; i < numSamples; i++) {
-        int randomValue = dist(mt);
-        histogram[randomValue]++;
+    for (int i = 0; i < num_samples; i++) {
+        int random_num = dist(mt);  
+        histogram[random_num]++;
     }
 
-    // Запись данных гистограммы в файл CSV
-    std::ofstream dataFile("histogram_data_cpp.csv"); 
-    if (!dataFile) {
-        std::cerr << "Ошибка: Не удалось открыть файл для данных!" << std::endl;
-        return 1;
+    writeHistogramToCSV("histogram_mt.csv", histogram);
+
+    const int expected_count = num_samples / num_bins;
+    double chi_square = 0.0;
+
+    for (int i = 0; i < num_bins; i++) {
+        chi_square += std::pow(histogram[i] - expected_count, 2) / expected_count;
     }
 
-    for (int i = 0; i < numBins; i++) {
-        dataFile << i << "," << histogram[i] << std::endl;
-    }
-    std::cout << "Данные записаны в файл " << std::endl;
-    dataFile.close();
-
-    // Проведение теста хи-квадрат
-    double expected = static_cast<double>(numSamples) / numBins;
-    double chiSquared = 0.0;
-
-    for (int i = 0; i < numBins; i++) {
-        chiSquared += pow(histogram[i] - expected, 2) / expected;
-    }
-
-    // Вывод результатов
-    std::cout << "Значение хи-квадрат: " << chiSquared << std::endl;
+    printChiSquareResult(chi_square);
 
     return 0;
 }
