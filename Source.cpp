@@ -1,9 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <string>
 #include <cmath>
-#include <locale>
-#include <clocale>
 
 class LinearCongruentialGenerator {
 public:
@@ -27,47 +26,50 @@ private:
     unsigned long long m_seed;
 };
 
+void writeHistogramToCSV(const std::string& filename, const std::vector<int>& histogram, int num_bins) {
+    std::ofstream csv_file(filename);
+    if (!csv_file.is_open()) {
+        std::cerr << "РћС€РёР±РєР° РѕС‚РєСЂС‹С‚РёСЏ С„Р°Р№Р»Р°: " << filename << std::endl;
+        return;
+    }
+
+    for (int i = 0; i < num_bins; i++) {
+        csv_file << i << ", " << histogram[i] << "\n";
+    }
+
+    csv_file.close();
+    std::cout << "Р“РёСЃС‚РѕРіСЂР°РјРјР° СЃРѕС…СЂР°РЅРµРЅР° РІ С„Р°Р№Р»Рµ '" << filename << "'." << std::endl;
+}
+
+void printChiSquareResult(double chi_square) {
+    std::cout << "РўРµСЃС‚РёСЂРѕРІР°РЅРёРµ РјРµС‚РѕРґРѕРј 'РҐРё-РєРІР°РґСЂР°С‚':" << std::endl;
+    std::cout << "РҐРё-РєРІР°РґСЂР°С‚: " << chi_square << std::endl;
+}
+
 int main() {
     setlocale(LC_ALL, "Russian");
+    LinearCongruentialGenerator lcg;
 
-    const unsigned long long seed = 12345; // Начальное значение (зерно) для генератора
-    LinearCongruentialGenerator lcg(seed);
+    const int num_samples = 10000;
+    const int num_bins = 10;
+    std::vector<int> histogram(num_bins, 0);
 
-    const int numSamples = 10000; // Количество сгенерированных случайных чисел
-    const int numBins = 20; // Количество корзин
-
-    std::vector<int> histogram(numBins, 0);
-
-    // Генерация случайных чисел и заполнение гистограммы
-    for (int i = 0; i < numSamples; i++) {
-        unsigned long long randomValue = lcg.random();
-        int bin = randomValue % numBins;
+    for (int i = 0; i < num_samples; i++) {
+        unsigned long long random_num = lcg.random();
+        int bin = random_num % num_bins;
         histogram[bin]++;
     }
 
-    // Запись данных гистограммы в файл CSV
-    std::ofstream dataFile("histogram_data.csv"); // Файл для данных гистограммы в формате CSV
-    if (!dataFile) {
-        std::cerr << "Ошибка: Не удалось открыть файл для данных!" << std::endl;
-        return 1;
+    writeHistogramToCSV("histogram1.csv", histogram, num_bins);
+
+    const int expected_count = num_samples / num_bins;
+    double chi_square = 0.0;
+
+    for (int i = 0; i < num_bins; i++) {
+        chi_square += std::pow(histogram[i] - expected_count, 2) / expected_count;
     }
 
-    for (int i = 0; i < numBins; i++) {
-        dataFile << i << "," << histogram[i] << std::endl;
-    }
-    std::cout << "Данные записаны в файл "<< std::endl;
-    dataFile.close();
-
-    // Проведение теста хи-квадрат
-    double expected = static_cast<double>(numSamples) / numBins;
-    double chiSquared = 0.0;
-
-    for (int i = 0; i < numBins; i++) {
-        chiSquared += pow(histogram[i] - expected, 2) / expected;
-    }
-
-    // Вывод результатов
-    std::cout << "Значение хи-квадрат: " << chiSquared << std::endl;
+    printChiSquareResult(chi_square);
 
     return 0;
 }
