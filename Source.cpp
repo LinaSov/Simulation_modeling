@@ -34,7 +34,7 @@ void writeHistogramToCSV(const std::string& filename, const std::vector<int>& hi
     }
 
     for (int i = 0; i < num_bins; i++) {
-        csv_file << i << ", " << histogram[i] << "\n";
+        csv_file << histogram[i] << "\n";
     }
 
     csv_file.close();
